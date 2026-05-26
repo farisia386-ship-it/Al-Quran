@@ -92,4 +92,16 @@ final List<PrayerGuide> prayerGuides = [
       PrayerStep(title: 'Minimal 2 Rakaat', description: 'Dilakukan minimal 2 rakaat dan kelipatannya, ditutup dengan sholat Witir.'),
     ],
   ),
+  PrayerGuide(
+    title: 'Sholat Tarawih',
+    description: 'Sholat sunnah pada malam bulan Ramadhan setelah sholat Isya.',
+    niatArabic: 'أُصَلِّي سُنَّةَ التَّرَاوِيْحِ رَكْعَتَيْنِ مُسْتَقْبِلَ الْقِبْلَةِ مَأْمُوْمًا لِلّٰهِ تَعَالَى',
+    niatLatin: 'Ushalli sunnatat tarawihi rak\'ataini mustaqbilal qiblati ma\'muman lillahi ta\'ala.',
+    niatTranslation: 'Aku niat sholat sunnah Tarawih dua rakaat menghadap kiblat sebagai makmum karena Allah Ta\'ala.',
+    steps: [
+      PrayerStep(title: 'Waktu', description: 'Setelah sholat Isya hingga sebelum Subuh di bulan Ramadhan.'),
+      PrayerStep(title: 'Pelaksanaan', description: 'Dilaksanakan 2 rakaat dengan salam, total rakaat bisa 8 atau 20 sesuai adat setempat.'),
+      PrayerStep(title: 'Penutup Witir', description: 'Setelah tarawih selesai, sangat dianjurkan melanjutkannya dengan sholat sunnah Witir 3 rakaat.'),
+    ],
+  ),
 ];
