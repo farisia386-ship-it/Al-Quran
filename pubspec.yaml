@@ -1,0 +1,39 @@
+name: muslim_id
+description: "Muslim ID - Premium Islamic Super App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  provider: ^6.0.0
+  google_fonts: ^6.0.0
+  http: ^1.0.0
+  shared_preferences: ^2.0.0
+  shimmer: ^3.0.0
+  intl: any
+  flutter_qiblah: ^2.2.1
+  flutter_local_notifications: ^17.0.0
+  timezone: ^0.9.2
+  geolocator: any
+  adhan: ^2.0.0+1
+  workmanager: ^0.9.0+3
+  vibration: ^3.1.8
+  flutter_svg: ^2.3.0
+  permission_handler: ^12.0.1
+  latlong2: ^0.10.1
+  flutter_vibrate: ^1.4.0
+  audioplayers: ^6.0.0
+  share_plus: ^10.1.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
