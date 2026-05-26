@@ -104,4 +104,20 @@ final List<PrayerGuide> prayerGuides = [
       PrayerStep(title: 'Penutup Witir', description: 'Setelah tarawih selesai, sangat dianjurkan melanjutkannya dengan sholat sunnah Witir 3 rakaat.'),
     ],
   ),
+  PrayerGuide(
+    title: 'Sholat Gerhana Matahari (Kusuf)',
+    description: 'Sholat sunnah dua rakaat yang dikerjakan ketika terjadi gerhana matahari.',
+    niatArabic: 'أُصَلِّي سُنَّةَ لِكُسُوْفِ الشَّمْسِ رَكْعَتَيْنِ مَأْمُوْمًا لِلّٰهِ تَعَالَى',
+    niatLatin: 'Ushalli sunnatan likusuufis syamsi rak\'ataini ma\'muman lillahi ta\'ala.',
+    niatTranslation: 'Aku niat sholat sunnah gerhana matahari dua rakaat sebagai makmum karena Allah Ta\'ala.',
+    steps: [
+      PrayerStep(title: 'Takbiratul Ihram & Niat', description: 'Berniat di dalam hati bersamaan dengan takbiratul ihram.'),
+      PrayerStep(title: 'Rakaat Pertama (Ruku Pertama)', description: 'Membaca Al-Fatihah dan surah panjang, kemudian melakukan ruku.'),
+      PrayerStep(title: 'Rakaat Pertama (Ruku Kedua)', description: 'Bangkit dari ruku (i\'tidal), kemudian membaca Al-Fatihah dan surah lagi, lalu ruku kembali untuk kedua kalinya dalam rakaat yang sama.'),
+      PrayerStep(title: 'Sujud', description: 'I\'tidal dari ruku kedua, lalu melakukan dua kali sujud (dianjurkan sujud yang panjang).'),
+      PrayerStep(title: 'Rakaat Kedua', description: 'Dikerjakan persis seperti rakaat pertama (terdapat 2 kali ruku dan i\'tidal).'),
+      PrayerStep(title: 'Tahiyat & Salam', description: 'Duduk tasyahud akhir dan diakhiri dengan salam.'),
+      PrayerStep(title: 'Khutbah', description: 'Setelah sholat selesai, jamaah mendengarkan khutbah (jika dilakukan berjamaah).'),
+    ],
+  ),
 ];
