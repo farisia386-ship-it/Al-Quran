@@ -10,6 +10,8 @@ import 'screens/splash/splash_screen.dart';
 
 import 'providers/language_provider.dart';
 import 'services/notification_service.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
@@ -77,6 +79,17 @@ class MuslimIDApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       locale: langProvider.currentLocale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('id'), Locale('en'), Locale('ar'),
+        Locale('ko'), Locale('ja'), Locale('ru'),
+        Locale('tr'), Locale('it'), Locale('ur'),
+      ],
       builder: (context, child) {
         return Directionality(
           textDirection: langProvider.isRTL ? TextDirection.rtl : TextDirection.ltr,

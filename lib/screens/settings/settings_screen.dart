@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../config/colors.dart';
@@ -14,18 +15,19 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final langProvider = Provider.of<LanguageProvider>(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(langProvider.translate('settings')),
+        title: Text(l10n.settings),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _sectionTitle(langProvider.translate('app_title')),
+          _sectionTitle(l10n.app_title),
           _settingsTile(
             icon: Icons.dark_mode_outlined,
-            title: 'Dark Mode',
+            title: l10n.dark_mode,
             trailing: Switch(
               value: themeProvider.isDarkMode,
               onChanged: (value) => themeProvider.toggleTheme(),
@@ -34,7 +36,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           _settingsTile(
             icon: Icons.language,
-            title: 'Language / Bahasa',
+            title: l10n.language_settings,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -48,20 +50,20 @@ class SettingsScreen extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
-          _sectionTitle(langProvider.translate('notification_settings')),
+          _sectionTitle(l10n.notification_settings),
           _settingsTile(
             icon: Icons.notifications_active_outlined,
-            title: 'Adzan & Pengingat',
+            title: l10n.adzan_settings,
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const PrayerSettingsScreen()));
             },
           ),
           const SizedBox(height: 16),
-          _sectionTitle(langProvider.translate('about_app')),
+          _sectionTitle(l10n.about_app),
           _settingsTile(
             icon: Icons.info_outline,
-            title: langProvider.translate('about_app'),
+            title: l10n.about_app,
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));

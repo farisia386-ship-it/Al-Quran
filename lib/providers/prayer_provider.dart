@@ -1,24 +1,36 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hijri/hijri_calendar.dart';
+import 'package:intl/intl.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
 
 class PrayerProvider with ChangeNotifier {
   final LocationService _locationService = LocationService();
   
-  PrayerTimes? _prayerTimes;
+  PrayerTimes? _prayerTimesToday;
+  PrayerTimes? _prayerTimesTomorrow;
   Position? _currentPosition;
-  bool _isLoading = false;
-  String _locationName = "Mencari Lokasi...";
+  bool _isLoading = true;
+  String _locationName = "location_searching";
   
-  Map<String, bool> _notificationSettings = {
-    "Subuh": true,
-    "Dzuhur": true,
-    "Ashar": true,
-    "Maghrib": true,
-    "Isya": true,
+  Timer? _timer;
+  
+  String _currentPrayerKey = "";
+  String _nextPrayerKey = "";
+  DateTime? _nextPrayerTime;
+  
+  HijriCalendar? _hijriDate;
+  
+  final Map<String, bool> _notificationSettings = {
+    "fajr": true,
+    "dhuhr": true,
+    "asr": true,
+    "maghrib": true,
+    "isha": true,
   };
   
   bool _prePrayerReminder = true;
@@ -26,7 +38,7 @@ class PrayerProvider with ChangeNotifier {
   bool _vibrationActive = true;
   String _adhanSound = "adzan";
 
-  PrayerTimes? get prayerTimes => _prayerTimes;
+  PrayerTimes? get prayerTimesToday => _prayerTimesToday;
   bool get isLoading => _isLoading;
   String get locationName => _locationName;
   String get city => _locationName;
@@ -34,10 +46,32 @@ class PrayerProvider with ChangeNotifier {
   bool get prePrayerReminder => _prePrayerReminder;
   bool get vibrationActive => _vibrationActive;
   String get adhanSound => _adhanSound;
+  
+  String get currentPrayerKey => _currentPrayerKey;
+  String get nextPrayerKey => _nextPrayerKey;
+  DateTime? get nextPrayerTime => _nextPrayerTime;
+  HijriCalendar? get hijriDate => _hijriDate;
 
   PrayerProvider() {
     _loadSettings();
     initPrayerTimes();
+    _startTimer();
+  }
+  
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    // Run every second to update internal time and countdowns if necessary
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_prayerTimesToday != null) {
+        _updateCurrentAndNextPrayer();
+        notifyListeners();
+      }
+    });
   }
 
   Future<void> _loadSettings() async {
@@ -52,10 +86,10 @@ class PrayerProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> toggleNotification(String prayer) async {
-    _notificationSettings[prayer] = !(_notificationSettings[prayer] ?? true);
+  Future<void> toggleNotification(String prayerKey) async {
+    _notificationSettings[prayerKey] = !(_notificationSettings[prayerKey] ?? true);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('notif_$prayer', _notificationSettings[prayer]!);
+    await prefs.setBool('notif_$prayerKey', _notificationSettings[prayerKey]!);
     await scheduleAllNotifications();
     notifyListeners();
   }
@@ -85,13 +119,14 @@ class PrayerProvider with ChangeNotifier {
 
       if (_currentPosition != null) {
         _calculateTimes();
+        _updateCurrentAndNextPrayer();
         await scheduleAllNotifications();
-        _locationName = "Lokasi GPS Aktif";
+        _locationName = "location_active";
       } else {
-        _locationName = "Gagal mendapatkan lokasi";
+        _locationName = "location_failed";
       }
     } catch (e) {
-      _locationName = "Error: $e";
+      _locationName = "location_failed";
     }
 
     _isLoading = false;
@@ -100,60 +135,90 @@ class PrayerProvider with ChangeNotifier {
 
   void _calculateTimes() {
     if (_currentPosition == null) return;
+    
+    // Set Hijri Date
+    _hijriDate = HijriCalendar.now();
 
     final coordinates = Coordinates(_currentPosition!.latitude, _currentPosition!.longitude);
     final params = CalculationMethod.muslim_world_league.getParameters();
     params.madhab = Madhab.shafi;
 
-    _prayerTimes = PrayerTimes.today(coordinates, params);
+    final dateToday = DateComponents.from(DateTime.now());
+    final dateTomorrow = DateComponents.from(DateTime.now().add(const Duration(days: 1)));
+    
+    _prayerTimesToday = PrayerTimes(coordinates, dateToday, params);
+    _prayerTimesTomorrow = PrayerTimes(coordinates, dateTomorrow, params);
+  }
+
+  void _updateCurrentAndNextPrayer() {
+    if (_prayerTimesToday == null || _prayerTimesTomorrow == null) return;
+    
+    final now = DateTime.now();
+    
+    // Mapping from adhan Prayer type to localization keys
+    String getPrayerKey(Prayer prayer) {
+      switch (prayer) {
+        case Prayer.fajr: return 'fajr';
+        case Prayer.sunrise: return 'syuruq';
+        case Prayer.dhuhr: return 'dhuhr';
+        case Prayer.asr: return 'asr';
+        case Prayer.maghrib: return 'maghrib';
+        case Prayer.isha: return 'isha';
+        default: return 'none';
+      }
+    }
+
+    Prayer current = _prayerTimesToday!.currentPrayer();
+    Prayer next = _prayerTimesToday!.nextPrayer();
+    
+    // If it's past Isha, nextPrayer() will return Prayer.none
+    if (next == Prayer.none) {
+      _currentPrayerKey = 'isha';
+      _nextPrayerKey = 'fajr';
+      _nextPrayerTime = _prayerTimesTomorrow!.fajr;
+    } else {
+      _currentPrayerKey = current == Prayer.none ? 'isha' : getPrayerKey(current);
+      _nextPrayerKey = getPrayerKey(next);
+      _nextPrayerTime = _prayerTimesToday!.timeForPrayer(next);
+    }
   }
 
   Future<void> scheduleAllNotifications() async {
-    if (_prayerTimes == null) return;
+    if (_prayerTimesToday == null) return;
 
     await NotificationService.cancelAll();
 
     final prayers = {
-      "Subuh": _prayerTimes!.fajr,
-      "Dzuhur": _prayerTimes!.dhuhr,
-      "Ashar": _prayerTimes!.asr,
-      "Maghrib": _prayerTimes!.maghrib,
-      "Isya": _prayerTimes!.isha,
+      "fajr": _prayerTimesToday!.fajr,
+      "dhuhr": _prayerTimesToday!.dhuhr,
+      "asr": _prayerTimesToday!.asr,
+      "maghrib": _prayerTimesToday!.maghrib,
+      "isha": _prayerTimesToday!.isha,
     };
 
     int id = 0;
     for (var entry in prayers.entries) {
       if (_notificationSettings[entry.key] == true) {
-        // Adhan Notification
+        // We will schedule it with generic text, but in a real app 
+        // the background worker should localize it. We will use a generic default alert.
         await NotificationService.scheduleAdhan(
           id,
-          "Waktunya Sholat ${entry.key}",
-          "Marilah kita menunaikan ibadah sholat ${entry.key}",
+          "Waktunya Sholat",
+          "Marilah kita menunaikan ibadah sholat",
           entry.value,
           sound: _adhanSound,
         );
       }
 
       if (_prePrayerReminder) {
-        // Pre-prayer reminder
         await NotificationService.scheduleReminder(
           id + 100,
-          "$_prePrayerMinutes Menit Menuju ${entry.key}",
-          "Bersiaplah untuk menunaikan sholat ${entry.key}",
+          "$_prePrayerMinutes Menit Menuju Sholat",
+          "Bersiaplah untuk menunaikan sholat",
           entry.value.subtract(Duration(minutes: _prePrayerMinutes)),
         );
       }
       id++;
     }
-  }
-
-  String getNextPrayerName() {
-    if (_prayerTimes == null) return "-";
-    return _prayerTimes!.nextPrayer().name.toUpperCase();
-  }
-
-  DateTime? getNextPrayerTime() {
-    if (_prayerTimes == null) return null;
-    return _prayerTimes!.timeForPrayer(_prayerTimes!.nextPrayer());
   }
 }

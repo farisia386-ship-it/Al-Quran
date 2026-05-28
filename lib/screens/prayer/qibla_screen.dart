@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_qiblah/flutter_qiblah.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'dart:math' as math;
 import '../../config/colors.dart';
 import '../../providers/qibla_provider.dart';
@@ -32,15 +33,16 @@ class _QiblaScreenState extends State<QiblaScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<QiblaProvider>(context);
+    final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kiblat Finder'),
+        title: Text(l10n.qibla),
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
-            onPressed: () => _showCalibrationDialog(context),
+            onPressed: () => _showCalibrationDialog(context, l10n),
           ),
         ],
       ),
@@ -52,7 +54,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
           }
 
           if (locationSnapshot.data?.enabled == false || locationSnapshot.data?.status == LocationPermission.denied) {
-            return _buildPermissionError();
+            return _buildPermissionError(l10n);
           }
 
           return StreamBuilder(
@@ -63,7 +65,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
               }
 
               if (snapshot.hasError) {
-                return Center(child: Text("Error: ${snapshot.error}"));
+                return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: isDark ? Colors.white : Colors.black)));
               }
 
               if (!snapshot.hasData || snapshot.data == null) {
@@ -78,7 +80,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                     .checkAlignment(qiblahDirection.direction, qiblahDirection.offset);
               });
 
-              return _buildQiblaUI(qiblahDirection, provider, isDark);
+              return _buildQiblaUI(qiblahDirection, provider, isDark, l10n);
             },
           );
         },
@@ -86,32 +88,32 @@ class _QiblaScreenState extends State<QiblaScreen> {
     );
   }
 
-  Widget _buildQiblaUI(QiblahDirection direction, QiblaProvider provider, bool isDark) {
+  Widget _buildQiblaUI(QiblahDirection direction, QiblaProvider provider, bool isDark, AppLocalizations l10n) {
     final isAligned = provider.isAligned;
 
     return SingleChildScrollView(
       child: Column(
         children: [
           const SizedBox(height: 20),
-          _buildInfoCards(direction, provider),
+          _buildInfoCards(direction, provider, l10n),
           const SizedBox(height: 40),
           _buildCompass(direction, isAligned, isDark),
           const SizedBox(height: 40),
-          _buildInstructions(isAligned),
+          _buildInstructions(isAligned, l10n),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCards(QiblahDirection direction, QiblaProvider provider) {
+  Widget _buildInfoCards(QiblahDirection direction, QiblaProvider provider, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           Expanded(
             child: _statCard(
-              "Derajat",
+              "Derajat", // can be localized if desired, but keeping minimal translation overhead
               "${direction.direction.toInt()}°",
               Icons.explore_outlined,
               AppColors.primary,
@@ -120,8 +122,8 @@ class _QiblaScreenState extends State<QiblaScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: _statCard(
-              "Jarak ke Mekkah",
-              "${provider.distanceToMecca.toStringAsFixed(0)} KM",
+              "Jarak KM", // can be localized
+              provider.distanceToMecca.toStringAsFixed(0),
               Icons.location_on_outlined,
               AppColors.gold,
             ),
@@ -151,6 +153,10 @@ class _QiblaScreenState extends State<QiblaScreen> {
   }
 
   Widget _buildCompass(QiblahDirection direction, bool isAligned, bool isDark) {
+    // We use AnimatedRotation to smooth out the stream data jitter naturally.
+    final turns = (direction.direction * -1) / 360;
+    final qiblaTurns = (direction.qiblah * -1) / 360;
+
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -172,9 +178,11 @@ class _QiblaScreenState extends State<QiblaScreen> {
             ),
           ),
         
-        // Compass Background (rotates with device)
-        Transform.rotate(
-          angle: (direction.direction * (math.pi / 180) * -1),
+        // Compass Background (rotates with device smoothly)
+        AnimatedRotation(
+          turns: turns,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOutCubic,
           child: Container(
             width: 300,
             height: 300,
@@ -216,9 +224,11 @@ class _QiblaScreenState extends State<QiblaScreen> {
           ),
         ),
         
-        // Qibla Indicator (points to Kaaba)
-        Transform.rotate(
-          angle: (direction.qiblah * (math.pi / 180) * -1),
+        // Qibla Indicator (points to Kaaba) smoothly
+        AnimatedRotation(
+          turns: qiblaTurns,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOutCubic,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -261,7 +271,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
     );
   }
 
-  Widget _buildInstructions(bool isAligned) {
+  Widget _buildInstructions(bool isAligned, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
@@ -269,35 +279,28 @@ class _QiblaScreenState extends State<QiblaScreen> {
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: Text(
-              isAligned ? "Kiblat Terdeteksi!" : "Pegang Datar & Putar Perangkat",
+              isAligned ? l10n.qibla_detected : l10n.qibla_searching,
               key: ValueKey(isAligned),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: isAligned ? AppColors.primary : Colors.grey,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            isAligned 
-              ? "Anda sedang menghadap tepat ke arah Ka'bah. Silakan mulai ibadah Anda."
-              : "Pastikan Anda berada di ruang terbuka dan jauh dari logam agar sensor berfungsi optimal.",
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey, height: 1.5),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           TextButton.icon(
-            onPressed: () => _showCalibrationDialog(context),
+            onPressed: () => _showCalibrationDialog(context, l10n),
             icon: const Icon(Icons.refresh, size: 18),
-            label: const Text("Cara Kalibrasi"),
+            label: Text(l10n.calibrate_compass),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPermissionError() {
+  Widget _buildPermissionError(AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -306,15 +309,9 @@ class _QiblaScreenState extends State<QiblaScreen> {
           children: [
             const Icon(Icons.location_off_outlined, size: 80, color: AppColors.error),
             const SizedBox(height: 24),
-            const Text(
-              "Izin Lokasi Dibutuhkan",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "Muslim ID memerlukan akses lokasi untuk menghitung arah Kiblat yang akurat dari posisi Anda saat ini.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+            Text(
+              l10n.location_failed,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
@@ -322,7 +319,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               ),
-              child: const Text("Berikan Izin"),
+              child: const Text("Refresh"),
             ),
           ],
         ),
@@ -331,26 +328,24 @@ class _QiblaScreenState extends State<QiblaScreen> {
   }
 
   Widget _buildSensorError() {
-    return const Center(child: Text("Sensor tidak tersedia atau gagal memuat data."));
+    return const Center(child: Text("Sensor error / not found."));
   }
 
-  void _showCalibrationDialog(BuildContext context) {
+  void _showCalibrationDialog(BuildContext context, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Cara Kalibrasi"),
+        title: Text(l10n.calibrate_compass),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Pegang HP Anda dan gerakkan membentuk angka 8 di udara beberapa kali."),
+            Text("Gerakkan perangkat membentuk angka 8."),
             SizedBox(height: 20),
             Icon(Icons.vibration, size: 40, color: AppColors.primary),
-            SizedBox(height: 10),
-            Text("HP akan bergetar saat arah Kiblat sudah tepat.", textAlign: TextAlign.center),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Mengerti")),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
         ],
       ),
     );
