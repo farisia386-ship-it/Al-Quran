@@ -11,7 +11,7 @@ import 'screens/splash/splash_screen.dart';
 import 'providers/language_provider.dart';
 import 'services/notification_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';

@@ -11,6 +11,11 @@ class LanguageProvider with ChangeNotifier {
     _initLanguage();
   }
 
+  // Supported language codes that match our ARB files
+  static const Set<String> _supportedLangs = {
+    'id', 'en', 'ar', 'ko', 'ja', 'ru', 'tr', 'it', 'ur'
+  };
+
   Future<void> _initLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     final String? savedLang = prefs.getString('language_code');
@@ -19,8 +24,8 @@ class LanguageProvider with ChangeNotifier {
       _currentLocale = Locale(savedLang);
     } else {
       // Auto-detect device language
-      String deviceLang = ui.window.locale.languageCode;
-      if (translations.containsKey(deviceLang)) {
+      String deviceLang = ui.PlatformDispatcher.instance.locale.languageCode;
+      if (_supportedLangs.contains(deviceLang)) {
         _currentLocale = Locale(deviceLang);
       } else {
         _currentLocale = const Locale('en');
